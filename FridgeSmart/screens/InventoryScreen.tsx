@@ -11,6 +11,7 @@ import {
   StatusBar,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useApp } from '../context/AppContext';
@@ -191,7 +192,7 @@ const InventoryScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <StatusBar barStyle="dark-content" />
       
       {/* Header and Search */}
@@ -214,75 +215,14 @@ const InventoryScreen = () => {
         </View>
       </View>
       
-      {/* Expiring Soon Section */}
-      {expiringItems.length > 0 && (
-        <View style={styles.expiringSection}>
-          <View style={styles.expiringHeader}>
-            <MaterialIcons name="access-time" size={20} color={theme.colors.warning} />
-            <Text style={styles.expiringTitle}>Expiring Soon</Text>
-          </View>
-          <ScrollView 
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.expiringItemsContainer}
-          >
-            {expiringItems.map(item => (
-              <TouchableOpacity 
-                key={item.id} 
-                style={styles.expiringItem}
-                onPress={() => {
-                  // @ts-ignore
-                  navigation.navigate('ItemDetails', { itemId: item.id });
-                }}
-              >
-                <Image 
-                  source={{ uri: item.imageUri || 'https://images.unsplash.com/photo-1583852151375-9d580d501a01?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' }} 
-                  style={styles.expiringItemImage} 
-                />
-                <View style={styles.expiringItemInfo}>
-                  <Text style={styles.expiringItemName} numberOfLines={1}>{item.name}</Text>
-                  <View style={styles.expiringDateRow}>
-                    <MaterialIcons name="event" size={12} color={theme.colors.warning} />
-                    <Text style={styles.expiringItemDate}>{item.expiry}</Text>
-                  </View>
-                </View>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-      )}
-
-      {/* Category Filters */}
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        style={styles.categoryFilters}
-      >
-        {renderCategoryButton('all', 'All', 'category')}
-        {renderCategoryButton('dairy', 'Dairy', 'opacity')}
-        {renderCategoryButton('meat', 'Meat', 'restaurant')}
-        {renderCategoryButton('vegetables', 'Vegetables', 'eco')}
-        {renderCategoryButton('fruits', 'Fruits', 'apple')}
-        {renderCategoryButton('beverages', 'Beverages', 'local-cafe')}
-        {renderCategoryButton('other', 'Other', 'shopping-basket')}
-      </ScrollView>
-
-      {/* Sort Options */}
-      <View style={styles.sortOptions}>
-        <Text style={styles.sortOptionsLabel}>Sort by:</Text>
-        <View style={styles.sortButtonsContainer}>
-          {renderSortButton('name', 'Name')}
-          {renderSortButton('expiry', 'Expiry Date')}
-          {renderSortButton('recently-added', 'Recently Added')}
-        </View>
-      </View>
-
-      {/* Inventory List */}
+      {/* Main Scrollable Content */}
       <FlatList
+        style={styles.flatList}
         data={filteredInventory}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => <InventoryItem item={item} />}
         contentContainerStyle={styles.inventoryList}
+        showsVerticalScrollIndicator={true}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -292,6 +232,74 @@ const InventoryScreen = () => {
           />
         }
         ListEmptyComponent={renderEmptyState()}
+        ListHeaderComponent={
+          <>
+            {/* Expiring Soon Section */}
+            {expiringItems.length > 0 && (
+              <View style={styles.expiringSection}>
+                <View style={styles.expiringHeader}>
+                  <MaterialIcons name="access-time" size={20} color={theme.colors.warning} />
+                  <Text style={styles.expiringTitle}>Expiring Soon</Text>
+                </View>
+                <ScrollView 
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.expiringItemsContainerContent}
+                >
+                  {expiringItems.map(item => (
+                    <TouchableOpacity 
+                      key={item.id} 
+                      style={styles.expiringItem}
+                      onPress={() => {
+                        // @ts-ignore
+                        navigation.navigate('ItemDetails', { itemId: item.id });
+                      }}
+                    >
+                      <Image 
+                        source={{ uri: item.imageUri || 'https://images.unsplash.com/photo-1583852151375-9d580d501a01?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' }} 
+                        style={styles.expiringItemImage} 
+                      />
+                      <View style={styles.expiringItemInfo}>
+                        <Text style={styles.expiringItemName} numberOfLines={1}>{item.name}</Text>
+                        <View style={styles.expiringDateRow}>
+                          <MaterialIcons name="event" size={12} color={theme.colors.warning} />
+                          <Text style={styles.expiringItemDate}>{item.expiry}</Text>
+                        </View>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* Category Filters */}
+            <View style={styles.categoryFiltersWrapper}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.categoryFiltersContent}
+              >
+                {renderCategoryButton('all', 'All', 'category')}
+                {renderCategoryButton('dairy', 'Dairy', 'opacity')}
+                {renderCategoryButton('meat', 'Meat', 'restaurant')}
+                {renderCategoryButton('vegetables', 'Vegetables', 'eco')}
+                {renderCategoryButton('fruits', 'Fruits', 'apple')}
+                {renderCategoryButton('beverages', 'Beverages', 'local-cafe')}
+                {renderCategoryButton('other', 'Other', 'shopping-basket')}
+              </ScrollView>
+            </View>
+
+            {/* Sort Options */}
+            <View style={styles.sortOptions}>
+              <Text style={styles.sortOptionsLabel}>Sort by:</Text>
+              <View style={styles.sortButtonsContainer}>
+                {renderSortButton('name', 'Name')}
+                {renderSortButton('expiry', 'Expiry Date')}
+                {renderSortButton('recently-added', 'Recently Added')}
+              </View>
+            </View>
+          </>
+        }
       />
 
       {/* Add Button */}
@@ -301,7 +309,7 @@ const InventoryScreen = () => {
       >
         <MaterialIcons name="add" size={28} color="white" />
       </TouchableOpacity>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -337,29 +345,36 @@ const styles = StyleSheet.create({
     color: frostTheme.colors.text,
     fontSize: frostTheme.typography.fontSizes.md,
   },
-  categoryFilters: {
-    flexDirection: 'row',
-    paddingHorizontal: frostTheme.spacing.md,
-    paddingVertical: frostTheme.spacing.sm,
+  categoryFiltersWrapper: {
     backgroundColor: frostTheme.colors.white,
+    paddingVertical: frostTheme.spacing.sm,
+    width: '100%',
+    borderBottomWidth: 1,
+    borderBottomColor: frostTheme.colors.border,
+  },
+  categoryFiltersContent: {
+    paddingHorizontal: frostTheme.spacing.md,
+    flexDirection: 'row',
+    flexWrap: 'nowrap',
   },
   categoryButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: frostTheme.spacing.md,
+    paddingHorizontal: frostTheme.spacing.sm,
     paddingVertical: frostTheme.spacing.xs,
     borderRadius: frostTheme.borderRadius.full,
     marginRight: frostTheme.spacing.sm,
     backgroundColor: frostTheme.colors.background,
     borderWidth: 1,
     borderColor: frostTheme.colors.border,
+    height: 32,
   },
   categoryButtonActive: {
     backgroundColor: frostTheme.colors.primary,
     borderColor: frostTheme.colors.primary,
   },
   categoryButtonLabel: {
-    fontSize: frostTheme.typography.fontSizes.sm,
+    fontSize: frostTheme.typography.fontSizes.xs,
     marginLeft: frostTheme.spacing.xs,
     color: frostTheme.colors.text,
   },
@@ -383,12 +398,14 @@ const styles = StyleSheet.create({
   },
   sortButtonsContainer: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   sortButton: {
     paddingHorizontal: frostTheme.spacing.md,
     paddingVertical: frostTheme.spacing.xs,
     borderRadius: frostTheme.borderRadius.round,
     marginRight: frostTheme.spacing.sm,
+    marginBottom: frostTheme.spacing.xs,
     backgroundColor: frostTheme.colors.background,
     borderWidth: 1,
     borderColor: frostTheme.colors.border,
@@ -405,9 +422,12 @@ const styles = StyleSheet.create({
     fontWeight: frostTheme.typography.fontWeights.medium as any,
   },
   inventoryList: {
-    paddingBottom: frostTheme.spacing.xl,
-    paddingHorizontal: frostTheme.spacing.md,
+    paddingBottom: 80,
     flexGrow: 1,
+  },
+  flatList: {
+    flex: 1,
+    width: '100%',
   },
   addButton: {
     position: 'absolute',
@@ -444,8 +464,9 @@ const styles = StyleSheet.create({
     color: frostTheme.colors.warning,
     marginLeft: frostTheme.spacing.xs,
   },
-  expiringItemsContainer: {
+  expiringItemsContainerContent: {
     paddingHorizontal: frostTheme.spacing.md,
+    paddingRight: frostTheme.spacing.lg,
   },
   expiringItem: {
     width: 120,
@@ -481,4 +502,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default InventoryScreen; 
+export default InventoryScreen;
