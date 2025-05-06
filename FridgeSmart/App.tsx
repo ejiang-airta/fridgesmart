@@ -14,6 +14,7 @@ import InventoryScreen from './screens/InventoryScreen';
 import CameraScreen from './screens/CameraScreen';
 import ItemDetailScreen from './screens/ItemDetailScreen';
 import AddItemScreen from './screens/AddItemScreen';
+import 'react-native-gesture-handler';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();

@@ -1,3 +1,4 @@
+// File: /FridgeSmart/screens/InventoryScreen.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
@@ -10,6 +11,7 @@ import {
   ScrollView,
   StatusBar,
   Image,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -192,10 +194,10 @@ const InventoryScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
       <StatusBar barStyle="dark-content" />
       
-      {/* Header and Search */}
+      {/* Header and Search - Fixed at top */}
       <View style={styles.header}>
         <Text style={styles.title}>My Inventory</Text>
         <View style={styles.searchContainer}>
@@ -215,92 +217,106 @@ const InventoryScreen = () => {
         </View>
       </View>
       
-      {/* Main Scrollable Content */}
-      <FlatList
-        style={styles.flatList}
-        data={filteredInventory}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <InventoryItem item={item} />}
-        contentContainerStyle={styles.inventoryList}
-        showsVerticalScrollIndicator={true}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[theme.colors.primary]}
-            tintColor={theme.colors.primary}
-          />
-        }
-        ListEmptyComponent={renderEmptyState()}
-        ListHeaderComponent={
-          <>
-            {/* Expiring Soon Section */}
-            {expiringItems.length > 0 && (
-              <View style={styles.expiringSection}>
-                <View style={styles.expiringHeader}>
-                  <MaterialIcons name="access-time" size={20} color={theme.colors.warning} />
-                  <Text style={styles.expiringTitle}>Expiring Soon</Text>
-                </View>
-                <ScrollView 
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={styles.expiringItemsContainerContent}
+      {/* Main content with category filters and inventory items */}
+      <View style={styles.mainContent}>
+        {/* Expiring Soon Section */}
+        {expiringItems.length > 0 && (
+          <View style={styles.expiringSection}>
+            <View style={styles.expiringHeader}>
+              <MaterialIcons name="access-time" size={20} color={theme.colors.warning} />
+              <Text style={styles.expiringTitle}>Expiring Soon</Text>
+            </View>
+            <ScrollView 
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.expiringItemsContainerContent}
+              scrollEventThrottle={16}
+              alwaysBounceHorizontal={true}
+              pagingEnabled={false}
+              scrollIndicatorInsets={{ right: 1 }}  // iOS scrolling indicator fix
+            >
+              {expiringItems.map(item => (
+                <TouchableOpacity 
+                  key={item.id} 
+                  style={styles.expiringItem}
+                  onPress={() => {
+                    // @ts-ignore
+                    navigation.navigate('ItemDetails', { itemId: item.id });
+                  }}
                 >
-                  {expiringItems.map(item => (
-                    <TouchableOpacity 
-                      key={item.id} 
-                      style={styles.expiringItem}
-                      onPress={() => {
-                        // @ts-ignore
-                        navigation.navigate('ItemDetails', { itemId: item.id });
-                      }}
-                    >
-                      <Image 
-                        source={{ uri: item.imageUri || 'https://images.unsplash.com/photo-1583852151375-9d580d501a01?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' }} 
-                        style={styles.expiringItemImage} 
-                      />
-                      <View style={styles.expiringItemInfo}>
-                        <Text style={styles.expiringItemName} numberOfLines={1}>{item.name}</Text>
-                        <View style={styles.expiringDateRow}>
-                          <MaterialIcons name="event" size={12} color={theme.colors.warning} />
-                          <Text style={styles.expiringItemDate}>{item.expiry}</Text>
-                        </View>
-                      </View>
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+                  <Image 
+                    source={{ uri: item.imageUri || 'https://images.unsplash.com/photo-1583852151375-9d580d501a01?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80' }} 
+                    style={styles.expiringItemImage} 
+                  />
+                  <View style={styles.expiringItemInfo}>
+                    <Text style={styles.expiringItemName} numberOfLines={1}>{item.name}</Text>
+                    <View style={styles.expiringDateRow}>
+                      <MaterialIcons name="event" size={12} color={theme.colors.warning} />
+                      <Text style={styles.expiringItemDate}>{item.expiry}</Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
 
-            {/* Category Filters */}
-            <View style={styles.categoryFiltersWrapper}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.categoryFiltersContent}
-              >
-                {renderCategoryButton('all', 'All', 'category')}
-                {renderCategoryButton('dairy', 'Dairy', 'opacity')}
-                {renderCategoryButton('meat', 'Meat', 'restaurant')}
-                {renderCategoryButton('vegetables', 'Vegetables', 'eco')}
-                {renderCategoryButton('fruits', 'Fruits', 'apple')}
-                {renderCategoryButton('beverages', 'Beverages', 'local-cafe')}
-                {renderCategoryButton('other', 'Other', 'shopping-basket')}
-              </ScrollView>
-            </View>
+        {/* Category Filters */}
+        <View style={styles.categoryFiltersWrapper}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryFiltersContent}
+            scrollEventThrottle={16}
+            alwaysBounceHorizontal={true}
+            pagingEnabled={false}
+            scrollIndicatorInsets={{ right: 1 }} // iOS scrolling indicator fix
+          >
+            {renderCategoryButton('all', 'All', 'category')}
+            {renderCategoryButton('dairy', 'Dairy', 'opacity')}
+            {renderCategoryButton('meat', 'Meat', 'restaurant')}
+            {renderCategoryButton('vegetables', 'Vegetables', 'eco')}
+            {renderCategoryButton('fruits', 'Fruits', 'apple')}
+            {renderCategoryButton('beverages', 'Beverages', 'local-cafe')}
+            {renderCategoryButton('other', 'Other', 'shopping-basket')}
+          </ScrollView>
+        </View>
 
-            {/* Sort Options */}
-            <View style={styles.sortOptions}>
-              <Text style={styles.sortOptionsLabel}>Sort by:</Text>
-              <View style={styles.sortButtonsContainer}>
-                {renderSortButton('name', 'Name')}
-                {renderSortButton('expiry', 'Expiry Date')}
-                {renderSortButton('recently-added', 'Recently Added')}
-              </View>
-            </View>
-          </>
-        }
-      />
+        {/* Sort Options */}
+        <View style={styles.sortOptions}>
+          <Text style={styles.sortOptionsLabel}>Sort by:</Text>
+          <View style={styles.sortButtonsContainer}>
+            {renderSortButton('name', 'Name')}
+            {renderSortButton('expiry', 'Expiry Date')}
+            {renderSortButton('recently-added', 'Recently Added')}
+          </View>
+        </View>
+
+        {/* Inventory List */}
+        <FlatList
+          data={filteredInventory}
+          keyExtractor={(item) => item.id}
+          renderItem={({ item }) => <InventoryItem item={item} />}
+          contentContainerStyle={styles.inventoryList}
+          showsVerticalScrollIndicator={true}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
+            />
+          }
+          ListEmptyComponent={renderEmptyState()}
+          scrollEnabled={true}
+          scrollEventThrottle={16}
+          bounces={true}
+          overScrollMode="always"
+          indicatorStyle={Platform.OS === 'ios' ? 'black' : undefined}
+          progressViewOffset={10}
+          style={styles.flatList}
+        />
+      </View>
 
       {/* Add Button */}
       <TouchableOpacity
@@ -318,9 +334,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: frostTheme.colors.background,
   },
+  mainContent: {
+    flex: 1,
+    width: '100%',
+  },
   header: {
     padding: frostTheme.spacing.md,
     backgroundColor: frostTheme.colors.white,
+    borderBottomWidth: 1,
+    borderBottomColor: frostTheme.colors.border,
+    zIndex: 10,
   },
   title: {
     fontSize: frostTheme.typography.fontSizes.xl,
@@ -444,6 +467,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+    zIndex: 999,
   },
   expiringSection: {
     backgroundColor: frostTheme.colors.white,
