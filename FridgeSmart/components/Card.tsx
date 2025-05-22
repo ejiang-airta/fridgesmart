@@ -5,35 +5,45 @@ import frostTheme from '../theme/theme';
 interface CardProps {
   children: React.ReactNode;
   style?: ViewStyle;
-  elevated?: boolean;
+  variant?: 'elevated' | 'outlined' | 'flat';
 }
 
-const Card: React.FC<CardProps> = ({ children, style, elevated = false }) => {
+const Card: React.FC<CardProps> = ({
+  children,
+  style,
+  variant = 'elevated',
+}) => {
+  const getCardStyle = () => {
+    switch (variant) {
+      case 'outlined':
+        return {
+          backgroundColor: frostTheme.colors.white,
+          borderWidth: 1,
+          borderColor: frostTheme.colors.border,
+        };
+      case 'flat':
+        return {
+          backgroundColor: frostTheme.colors.white,
+        };
+      default:
+        return {
+          backgroundColor: frostTheme.colors.white,
+          ...frostTheme.shadows.small,
+        };
+    }
+  };
+
   return (
-    <View style={[
-      styles.card, 
-      elevated ? styles.elevatedCard : null,
-      style
-    ]}>
+    <View style={[styles.container, getCardStyle(), style]}>
       {children}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: frostTheme.colors.card,
-    borderRadius: frostTheme.borderRadius.md,
+  container: {
+    borderRadius: frostTheme.borderRadius.lg,
     padding: frostTheme.spacing.md,
-    marginVertical: frostTheme.spacing.sm,
-    ...frostTheme.shadows.small,
-    borderWidth: 1,
-    borderColor: 'rgba(221, 230, 240, 0.5)',
-  },
-  elevatedCard: {
-    ...frostTheme.shadows.medium,
-    borderWidth: 0,
-    backgroundColor: '#FFFFFF',
   },
 });
 

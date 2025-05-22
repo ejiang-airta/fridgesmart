@@ -17,6 +17,7 @@ import { useApp } from '../context/AppContext';
 import InventoryItem from '../components/InventoryItem';
 import EmptyState from '../components/EmptyState';
 import frostTheme from '../theme/theme';
+import { format } from 'date-fns';
 
 // Sort options
 type SortOption = 'name' | 'expiry' | 'recently-added';
@@ -60,9 +61,8 @@ const emptyStateStyles = StyleSheet.create({
   },
 });
 
-const InventoryScreen = () => {
-  const { inventory, theme } = useApp();
-  const navigation = useNavigation();
+const InventoryScreen = ({ navigation }: any) => {
+  const { inventory, theme, deleteItem } = useApp();
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<SortOption>('expiry');
@@ -118,51 +118,24 @@ const InventoryScreen = () => {
     }, 1000);
   };
 
-  const navigateToAddItem = () => {
-    // @ts-ignore
-    navigation.navigate('AddItemMain');
-  };
-
-  const renderCategoryButton = (value: CategoryFilter, label: string, icon: string) => (
+  const renderItem = ({ item }: any) => (
     <TouchableOpacity
-      style={[
-        styles.categoryButton,
-        categoryFilter === value && styles.categoryButtonActive
-      ]}
-      onPress={() => setCategoryFilter(value)}
+      style={styles.item}
+      onPress={() => navigation.navigate('AddItem', { item })}
     >
-      <MaterialIcons
-        name={icon as any}
-        size={16}
-        color={categoryFilter === value ? theme.colors.white : theme.colors.primary}
-      />
-      <Text
-        style={[
-          styles.categoryButtonLabel,
-          categoryFilter === value && styles.categoryButtonLabelActive
-        ]}
+      <View style={styles.itemContent}>
+        <Text style={styles.itemName}>{item.name}</Text>
+        <Text style={styles.itemExpiry}>
+          Expires: {format(new Date(item.expiry), 'MMM d, yyyy')}
+        </Text>
+        <Text style={styles.itemQuantity}>Quantity: {item.quantity}</Text>
+      </View>
+      <TouchableOpacity
+        style={styles.deleteButton}
+        onPress={() => deleteItem(item.id)}
       >
-        {label}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const renderSortButton = (value: SortOption, label: string) => (
-    <TouchableOpacity
-      style={[
-        styles.sortButton,
-        sortBy === value && styles.sortButtonActive
-      ]}
-      onPress={() => setSortBy(value)}
-    >
-      <Text
-        style={[
-          styles.sortButtonLabel,
-          sortBy === value && styles.sortButtonLabelActive
-        ]}
-      >
-        {label}
-      </Text>
+        <MaterialIcons name="delete" size={24} color="#FF3B30" />
+      </TouchableOpacity>
     </TouchableOpacity>
   );
 
@@ -184,7 +157,7 @@ const InventoryScreen = () => {
         message="Tap the + button to add your first item"
         action={{
           label: "Add Item",
-          onPress: navigateToAddItem
+          onPress: () => navigation.navigate('AddItem')
         }}
       />
     );
@@ -281,7 +254,7 @@ const InventoryScreen = () => {
       <FlatList
         data={filteredInventory}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <InventoryItem item={item} />}
+        renderItem={renderItem}
         contentContainerStyle={styles.inventoryList}
         refreshControl={
           <RefreshControl
@@ -297,7 +270,7 @@ const InventoryScreen = () => {
       {/* Add Button */}
       <TouchableOpacity
         style={styles.addButton}
-        onPress={navigateToAddItem}
+        onPress={() => navigation.navigate('AddItem')}
       >
         <MaterialIcons name="add" size={28} color="white" />
       </TouchableOpacity>
@@ -478,6 +451,42 @@ const styles = StyleSheet.create({
     fontSize: frostTheme.typography.fontSizes.xs,
     color: frostTheme.colors.warning,
     marginLeft: frostTheme.spacing.xs,
+  },
+  item: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  itemContent: {
+    flex: 1,
+  },
+  itemName: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  itemExpiry: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 2,
+  },
+  itemQuantity: {
+    fontSize: 14,
+    color: '#666',
+  },
+  deleteButton: {
+    padding: 8,
   },
 });
 

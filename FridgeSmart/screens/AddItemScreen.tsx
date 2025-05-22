@@ -16,6 +16,10 @@ import { useApp } from '../context/AppContext';
 import frostTheme from '../theme/theme';
 import Button from '../components/Button';
 import Card from '../components/Card';
+import { Picker } from '@react-native-picker/picker';
+import DateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { CameraView } from '../components/CameraView';
+import { notificationService } from '../services/notificationService';
 
 type ParamList = {
   AddItem: {
@@ -33,16 +37,11 @@ const AddItemScreen = () => {
   const [name, setName] = useState('');
   const [quantity, setQuantity] = useState('1');
   const [category, setCategory] = useState<'dairy' | 'meat' | 'vegetables' | 'fruits' | 'beverages' | 'other'>('other');
-  const [expiryDate, setExpiryDate] = useState(new Date().toISOString().split('T')[0]); // Format: YYYY-MM-DD
+  const [expiry, setExpiry] = useState(new Date());
   const [notes, setNotes] = useState('');
-  const imageUri = route.params?.imageUri || PLACEHOLDER_IMAGE;
-
-  // Calculate a date 7 days from now for default expiry
-  useEffect(() => {
-    const date = new Date();
-    date.setDate(date.getDate() + 7);
-    setExpiryDate(date.toISOString().split('T')[0]);
-  }, []);
+  const [imageUri, setImageUri] = useState<string | null>(route.params?.imageUri || null);
+  const [showCamera, setShowCamera] = useState(false);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   useEffect(() => {
     navigation.setOptions({
@@ -50,31 +49,34 @@ const AddItemScreen = () => {
     });
   }, [navigation]);
 
-  const handleSave = () => {
-    if (!name.trim()) {
-      // Simple validation
-      alert('Please enter an item name');
-      return;
+  const handleSave = async () => {
+    try {
+      const newItem = {
+        name,
+        category: category as any,
+        quantity: parseInt(quantity, 10),
+        expiry: expiry.toISOString(),
+        notes,
+        imageUri: imageUri || undefined,
+      };
+
+      await addItem(newItem);
+      await notificationService.scheduleExpiryNotification({
+        id: Date.now().toString(),
+        ...newItem,
+        addedDate: new Date().toISOString(),
+      });
+
+      navigation.goBack();
+    } catch (error) {
+      console.error('Error saving item:', error);
+      // You might want to show an error message to the user here
     }
-
-    const newItem = {
-      name: name.trim(),
-      category,
-      expiry: expiryDate,
-      quantity: parseInt(quantity) || 1,
-      notes: notes.trim(),
-      imageUri
-    };
-
-    addItem(newItem);
-    // @ts-ignore - Navigation typing issue
-    navigation.navigate('InventoryMain');
   };
 
-  // Create a simple date input
-  const handleExpiryChange = (text: string) => {
-    // Basic YYYY-MM-DD format
-    setExpiryDate(text);
+  const handlePhotoCaptured = (uri: string) => {
+    setImageUri(uri);
+    setShowCamera(false);
   };
 
   const renderCategoryOption = (
@@ -111,119 +113,139 @@ const AddItemScreen = () => {
       style={{ flex: 1 }}
     >
       <ScrollView style={styles.container}>
-        {/* Image preview */}
-        <View style={styles.imageContainer}>
-          <Image
-            source={{ uri: imageUri }}
-            style={styles.image}
-            resizeMode="cover"
+        {showCamera ? (
+          <CameraView
+            onPhotoCaptured={handlePhotoCaptured}
+            onClose={() => setShowCamera(false)}
           />
-          <TouchableOpacity 
-            style={styles.cameraButton} 
-            // @ts-ignore - Navigation typing issue
-            onPress={() => navigation.navigate('CameraMain')}
-          >
-            <MaterialIcons name="camera-alt" size={24} color={frostTheme.colors.white} />
-          </TouchableOpacity>
-        </View>
-
-        <Card style={styles.formCard}>
-          {/* Name field */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Item Name *</Text>
-            <TextInput
-              style={styles.input}
-              value={name}
-              onChangeText={setName}
-              placeholder="Enter item name"
-              placeholderTextColor={frostTheme.colors.subtext}
-            />
-          </View>
-
-          {/* Category */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Category</Text>
-            <ScrollView 
-              horizontal 
-              showsHorizontalScrollIndicator={false}
-              style={styles.categoryContainer}
-            >
-              {renderCategoryOption('dairy', 'Dairy', 'water-drop')}
-              {renderCategoryOption('meat', 'Meat', 'restaurant')}
-              {renderCategoryOption('vegetables', 'Vegetables', 'eco')}
-              {renderCategoryOption('fruits', 'Fruits', 'apple')}
-              {renderCategoryOption('beverages', 'Beverages', 'local-cafe')}
-              {renderCategoryOption('other', 'Other', 'shopping-basket')}
-            </ScrollView>
-          </View>
-
-          {/* Quantity */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Quantity</Text>
-            <View style={styles.quantityContainer}>
-              <TouchableOpacity
-                style={styles.quantityButton}
-                onPress={() => setQuantity(prev => Math.max(1, parseInt(prev) - 1).toString())}
-              >
-                <MaterialIcons name="remove" size={24} color={frostTheme.colors.primary} />
-              </TouchableOpacity>
-              <TextInput
-                style={styles.quantityInput}
-                value={quantity}
-                onChangeText={setQuantity}
-                keyboardType="numeric"
-              />
-              <TouchableOpacity
-                style={styles.quantityButton}
-                onPress={() => setQuantity(prev => (parseInt(prev) + 1).toString())}
-              >
-                <MaterialIcons name="add" size={24} color={frostTheme.colors.primary} />
-              </TouchableOpacity>
+        ) : (
+          <>
+            <View style={styles.imageContainer}>
+              {imageUri ? (
+                <Image
+                  source={{ uri: imageUri }}
+                  style={styles.image}
+                  resizeMode="cover"
+                />
+              ) : (
+                <TouchableOpacity
+                  style={styles.imagePlaceholder}
+                  onPress={() => setShowCamera(true)}
+                >
+                  <MaterialIcons name="camera-alt" size={40} color="#666" />
+                  <Text style={styles.imagePlaceholderText}>Take Photo</Text>
+                </TouchableOpacity>
+              )}
             </View>
-          </View>
 
-          {/* Expiry Date - Simplified */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Expiry Date (YYYY-MM-DD)</Text>
-            <TextInput
-              style={styles.input}
-              value={expiryDate}
-              onChangeText={handleExpiryChange}
-              placeholder="YYYY-MM-DD"
-              placeholderTextColor={frostTheme.colors.subtext}
-            />
-          </View>
+            <Card style={styles.formCard}>
+              {/* Name field */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Item Name *</Text>
+                <TextInput
+                  style={styles.input}
+                  value={name}
+                  onChangeText={setName}
+                  placeholder="Enter item name"
+                  placeholderTextColor={frostTheme.colors.subtext}
+                />
+              </View>
 
-          {/* Notes */}
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>Notes (Optional)</Text>
-            <TextInput
-              style={[styles.input, styles.notesInput]}
-              value={notes}
-              onChangeText={setNotes}
-              placeholder="Add any additional notes here"
-              placeholderTextColor={frostTheme.colors.subtext}
-              multiline
-              numberOfLines={3}
-            />
-          </View>
-        </Card>
+              {/* Category */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Category</Text>
+                <View style={styles.categoryContainer}>
+                  {renderCategoryOption('dairy', 'Dairy', 'water-drop')}
+                  {renderCategoryOption('meat', 'Meat', 'restaurant')}
+                  {renderCategoryOption('vegetables', 'Vegetables', 'eco')}
+                  {renderCategoryOption('fruits', 'Fruits', 'apple')}
+                  {renderCategoryOption('beverages', 'Beverages', 'local-cafe')}
+                  {renderCategoryOption('other', 'Other', 'shopping-basket')}
+                </View>
+              </View>
 
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
-          <Button
-            title="Cancel"
-            onPress={() => navigation.goBack()}
-            type="outline"
-            style={styles.cancelButton}
-          />
-          <Button
-            title="Save Item"
-            onPress={handleSave}
-            icon={<MaterialIcons name="check" size={18} color={frostTheme.colors.white} style={styles.buttonIcon} />}
-            style={styles.saveButton}
-          />
-        </View>
+              {/* Quantity */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Quantity</Text>
+                <View style={styles.quantityContainer}>
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => setQuantity(prev => Math.max(1, parseInt(prev) - 1).toString())}
+                  >
+                    <MaterialIcons name="remove" size={24} color={frostTheme.colors.primary} />
+                  </TouchableOpacity>
+                  <TextInput
+                    style={styles.quantityInput}
+                    value={quantity}
+                    onChangeText={setQuantity}
+                    keyboardType="numeric"
+                  />
+                  <TouchableOpacity
+                    style={styles.quantityButton}
+                    onPress={() => setQuantity(prev => (parseInt(prev) + 1).toString())}
+                  >
+                    <MaterialIcons name="add" size={24} color={frostTheme.colors.primary} />
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              {/* Expiry Date */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Expiry Date</Text>
+                <TouchableOpacity
+                  style={styles.dateButton}
+                  onPress={() => setShowDatePicker(true)}
+                >
+                  <Text>{expiry.toLocaleDateString()}</Text>
+                </TouchableOpacity>
+
+                {showDatePicker && (
+                  <DateTimePicker
+                    value={expiry}
+                    mode="date"
+                    display="default"
+                    onChange={(event: DateTimePickerEvent, selectedDate?: Date) => {
+                      setShowDatePicker(Platform.OS === 'ios');
+                      if (selectedDate) {
+                        setExpiry(selectedDate);
+                      }
+                    }}
+                  />
+                )}
+              </View>
+
+              {/* Notes */}
+              <View style={styles.inputGroup}>
+                <Text style={styles.label}>Notes (Optional)</Text>
+                <TextInput
+                  style={[styles.input, styles.notesInput]}
+                  value={notes}
+                  onChangeText={setNotes}
+                  placeholder="Add any additional notes here"
+                  placeholderTextColor={frostTheme.colors.subtext}
+                  multiline
+                  numberOfLines={3}
+                />
+              </View>
+            </Card>
+
+            {/* Action Buttons */}
+            <View style={styles.actionButtons}>
+              <Button
+                title="Cancel"
+                onPress={() => navigation.goBack()}
+                type="outline"
+                style={styles.cancelButton}
+              />
+              <Button
+                title="Save Item"
+                onPress={handleSave}
+                icon={<MaterialIcons name="check" size={18} color={frostTheme.colors.white} style={styles.buttonIcon} />}
+                style={styles.saveButton}
+              />
+            </View>
+          </>
+        )}
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -244,17 +266,13 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  cameraButton: {
-    position: 'absolute',
-    bottom: frostTheme.spacing.md,
-    right: frostTheme.spacing.md,
-    backgroundColor: frostTheme.colors.primary,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+  imagePlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
-    ...frostTheme.shadows.medium,
+  },
+  imagePlaceholderText: {
+    marginTop: 8,
+    color: '#666',
   },
   formCard: {
     margin: frostTheme.spacing.md,
@@ -330,6 +348,12 @@ const styles = StyleSheet.create({
     paddingVertical: frostTheme.spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: frostTheme.colors.border,
+  },
+  dateButton: {
+    borderWidth: 1,
+    borderColor: frostTheme.colors.border,
+    borderRadius: frostTheme.borderRadius.sm,
+    padding: frostTheme.spacing.md,
   },
   actionButtons: {
     flexDirection: 'row',
