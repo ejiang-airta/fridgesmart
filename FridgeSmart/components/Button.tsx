@@ -1,133 +1,150 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, StyleProp } from 'react-native';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  ActivityIndicator,
+  ViewStyle,
+  TextStyle,
+} from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import frostTheme from '../theme/theme';
 
+type ButtonVariant = 'primary' | 'secondary' | 'outline' | 'danger';
+type ButtonSize = 'small' | 'medium' | 'large';
+
 interface ButtonProps {
-  title?: string;
   onPress: () => void;
-  type?: 'primary' | 'secondary' | 'outline' | 'text';
-  size?: 'small' | 'medium' | 'large';
+  title: string;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  icon?: keyof typeof MaterialIcons.glyphMap;
   disabled?: boolean;
-  fullWidth?: boolean;
-  style?: StyleProp<ViewStyle>;
-  textStyle?: StyleProp<TextStyle>;
-  icon?: React.ReactNode;
-  iconOnly?: boolean;
+  loading?: boolean;
+  style?: ViewStyle;
+  textStyle?: TextStyle;
 }
 
 const Button: React.FC<ButtonProps> = ({
-  title,
   onPress,
-  type = 'primary',
+  title,
+  variant = 'primary',
   size = 'medium',
+  icon,
   disabled = false,
-  fullWidth = false,
+  loading = false,
   style,
   textStyle,
-  icon,
-  iconOnly = false,
 }) => {
-  const buttonStyle: StyleProp<ViewStyle> = [
-    styles.button,
-    size === 'small' ? styles.small : size === 'medium' ? styles.medium : styles.large,
-    type === 'primary' ? styles.primary : 
-    type === 'secondary' ? styles.secondary : 
-    type === 'outline' ? styles.outline : styles.text,
-    disabled && styles.disabled,
-    fullWidth && styles.fullWidth,
-    iconOnly && styles.iconOnly,
-    style,
-  ];
+  const getBackgroundColor = () => {
+    if (disabled) return frostTheme.colors.border;
+    switch (variant) {
+      case 'primary':
+        return frostTheme.colors.primary;
+      case 'secondary':
+        return frostTheme.colors.secondary;
+      case 'outline':
+        return 'transparent';
+      case 'danger':
+        return frostTheme.colors.danger;
+      default:
+        return frostTheme.colors.primary;
+    }
+  };
 
-  const textStyles: StyleProp<TextStyle> = [
-    styles.buttonText,
-    size === 'small' ? styles.smallText : 
-    size === 'medium' ? styles.mediumText : styles.largeText,
-    (type === 'outline' || type === 'text') && styles.outlineText,
-    disabled && styles.disabledText,
-    textStyle,
-  ];
-  
+  const getTextColor = () => {
+    if (disabled) return frostTheme.colors.subtext;
+    if (variant === 'outline') return frostTheme.colors.primary;
+    return frostTheme.colors.white;
+  };
+
+  const getBorderColor = () => {
+    if (disabled) return frostTheme.colors.border;
+    if (variant === 'outline') return frostTheme.colors.primary;
+    return 'transparent';
+  };
+
+  const getPadding = () => {
+    switch (size) {
+      case 'small':
+        return { vertical: frostTheme.spacing.xs, horizontal: frostTheme.spacing.sm };
+      case 'large':
+        return { vertical: frostTheme.spacing.md, horizontal: frostTheme.spacing.xl };
+      default:
+        return { vertical: frostTheme.spacing.sm, horizontal: frostTheme.spacing.lg };
+    }
+  };
+
+  const getFontSize = () => {
+    switch (size) {
+      case 'small':
+        return frostTheme.typography.fontSizes.sm;
+      case 'large':
+        return frostTheme.typography.fontSizes.lg;
+      default:
+        return frostTheme.typography.fontSizes.md;
+    }
+  };
+
   return (
     <TouchableOpacity
-      style={buttonStyle}
       onPress={onPress}
-      disabled={disabled}
-      activeOpacity={0.7}
+      disabled={disabled || loading}
+      style={[
+        styles.button,
+        {
+          backgroundColor: getBackgroundColor(),
+          borderColor: getBorderColor(),
+          paddingVertical: getPadding().vertical,
+          paddingHorizontal: getPadding().horizontal,
+        },
+        style,
+      ]}
     >
-      {icon}
-      {!iconOnly && title && <Text style={textStyles}>{title}</Text>}
+      {loading ? (
+        <ActivityIndicator color={getTextColor()} size="small" />
+      ) : (
+        <>
+          {icon && (
+            <MaterialIcons
+              name={icon}
+              size={getFontSize()}
+              color={getTextColor()}
+              style={styles.icon}
+            />
+          )}
+          <Text
+            style={[
+              styles.text,
+              {
+                color: getTextColor(),
+                fontSize: getFontSize(),
+              },
+              textStyle,
+            ]}
+          >
+            {title}
+          </Text>
+        </>
+      )}
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: frostTheme.borderRadius.md,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-  },
-  primary: {
-    backgroundColor: frostTheme.colors.primary,
-  },
-  secondary: {
-    backgroundColor: frostTheme.colors.secondary,
-  },
-  outline: {
-    backgroundColor: 'transparent',
+    justifyContent: 'center',
+    borderRadius: frostTheme.borderRadius.md,
     borderWidth: 1,
-    borderColor: frostTheme.colors.primary,
   },
   text: {
-    backgroundColor: 'transparent',
-  },
-  disabled: {
-    backgroundColor: frostTheme.colors.border,
-    borderColor: frostTheme.colors.border,
-  },
-  small: {
-    paddingVertical: frostTheme.spacing.xs,
-    paddingHorizontal: frostTheme.spacing.md,
-    minHeight: 32,
-  },
-  medium: {
-    paddingVertical: frostTheme.spacing.sm,
-    paddingHorizontal: frostTheme.spacing.lg,
-    minHeight: 44,
-  },
-  large: {
-    paddingVertical: frostTheme.spacing.md,
-    paddingHorizontal: frostTheme.spacing.xl,
-    minHeight: 54,
-  },
-  iconOnly: {
-    paddingHorizontal: frostTheme.spacing.sm,
-    aspectRatio: 1,
-  },
-  buttonText: {
     fontWeight: frostTheme.typography.fontWeights.medium as any,
-    color: frostTheme.colors.white,
     textAlign: 'center',
-    marginLeft: frostTheme.spacing.xs,
   },
-  smallText: {
-    fontSize: frostTheme.typography.fontSizes.sm,
-  },
-  mediumText: {
-    fontSize: frostTheme.typography.fontSizes.md,
-  },
-  largeText: {
-    fontSize: frostTheme.typography.fontSizes.lg,
-  },
-  outlineText: {
-    color: frostTheme.colors.primary,
-  },
-  disabledText: {
-    color: frostTheme.colors.subtext,
-  },
-  fullWidth: {
-    width: '100%',
+  icon: {
+    marginRight: frostTheme.spacing.xs,
   },
 });
 

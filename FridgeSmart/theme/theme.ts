@@ -1,19 +1,39 @@
-export const frostTheme = {
+const frostTheme = {
   colors: {
-    primary: '#5B87B0',     // Blue seen in the header and buttons
-    secondary: '#77A6D2',   // Lighter blue for secondary elements
-    accent: '#4A6F94',      // Darker blue for accents
-    background: '#F0F4F8',  // Very light blue/gray background
-    card: '#FFFFFF',        // White card background
-    text: '#2E4A62',        // Dark blue text for primary content
-    subtext: '#6C8098',     // Medium blue/gray for secondary text
-    border: '#DDE6F0',      // Light blue/gray border color
-    notification: '#E74C3C', // Red notification color
-    success: '#2ECC71',     // Green success color
-    warning: '#F39C12',     // Orange warning color
-    danger: '#E74C3C',      // Red danger color
+    primary: '#007AFF',
+    secondary: '#5856D6',
+    accent: '#FF2D55',
+    background: '#F2F2F7',
+    surface: '#FFFFFF',
+    card: '#FFFFFF',
+    text: '#000000',
+    textDisabled: '#8E8E93',
+    subtext: '#8E8E93',
+    border: '#C7C7CC',
+    disabled: '#E5E5EA',
+    notification: '#FF3B30',
+    success: '#34C759',
+    warning: '#FF9500',
+    danger: '#FF3B30',
+    info: '#5856D6',
     black: '#000000',
     white: '#FFFFFF',
+  },
+  spacing: {
+    xs: 4,
+    sm: 8,
+    md: 16,
+    lg: 24,
+    xl: 32,
+    xxl: 48,
+  },
+  borderRadius: {
+    sm: 4,
+    md: 8,
+    lg: 12,
+    xl: 24,
+    round: 9999,
+    full: 9999,
   },
   typography: {
     fontSizes: {
@@ -23,61 +43,52 @@ export const frostTheme = {
       lg: 18,
       xl: 20,
       xxl: 24,
-      xxxl: 30,
     },
     fontWeights: {
-      light: '300',
       regular: '400',
       medium: '500',
       semibold: '600',
       bold: '700',
     },
   },
-  spacing: {
-    xs: 4,
-    sm: 8,
-    md: 16,
-    lg: 24,
-    xl: 32,
-    xxl: 48,
-    xxxl: 64,
-  },
-  borderRadius: {
-    xs: 4,
-    sm: 8,
-    md: 12,
-    lg: 16,
-    xl: 24,
-    round: 9999,
-  },
   shadows: {
     small: {
-      shadowColor: '#8CA4BE',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.12,
-      shadowRadius: 2.0,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 1,
+      },
+      shadowOpacity: 0.18,
+      shadowRadius: 1.0,
       elevation: 1,
     },
     medium: {
-      shadowColor: '#8CA4BE',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.16,
-      shadowRadius: 3.0,
-      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.25,
+      shadowRadius: 3.84,
+      elevation: 5,
     },
     large: {
-      shadowColor: '#8CA4BE',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.20,
-      shadowRadius: 5.0,
-      elevation: 4,
+      shadowColor: '#000',
+      shadowOffset: {
+        width: 0,
+        height: 4,
+      },
+      shadowOpacity: 0.30,
+      shadowRadius: 4.65,
+      elevation: 8,
     },
   },
   gradients: {
-    primary: ['#6E9BC5', '#5B87B0'],
-    secondary: ['#E8F0F8', '#D2E2F2'],
-  }
+    primary: ['#007AFF', '#5856D6'],
+    success: ['#34C759', '#30B350'],
+    warning: ['#FF9500', '#FF8000'],
+    danger: ['#FF3B30', '#FF2D55'],
+  },
 };
 
-export type ThemeType = typeof frostTheme;
 export default frostTheme; 
